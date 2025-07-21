@@ -1,4 +1,5 @@
 # pylint: disable = missing-module-docstring
+import ast
 
 import duckdb
 import streamlit as st
@@ -26,27 +27,30 @@ SPACED REPETITION SYSTEM SQL PRACTICE
 with st.sidebar:
     # Creation menu deroulant
     theme = st.selectbox(
-        "What would you like to review ?",
-        ("cross_joins", "GroupBy", "Windows Functions"),
+        "Que souhaitez-vous réviser ?",
+        ("cross_joins", "GroupBy", "window_functions"),
         index=None,
-        placeholder="Select a theme...",
+        placeholder="Choisissez le theme...",
     )
-    st.write("You selected:", theme)
+    st.write("Vous avez choisi :", theme)
 
-    # Récupère les données selectionné par user sur le base db
+    # Récupère les données dans la base db et imprime le tableau
     exercise = con.execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'").df()
     st.write(exercise)
 
-# Creation ligne avec la query a renseigner
+# Creation ligne avec la query à renseigner
 st.header("enter your code:")
 query = st.text_area(label="votre code SQL ici", key="user_input")  # cree l'encart
 
 # Verification de la réponse utilisateur si elle est correcte
 
-# if query:
-#     result = duckdb.sql(query).df()  # resultat du sql converti en df
-#     st.dataframe(result)
-#
+if query:
+    try :
+        result = con.execute(query).df()  # resultat du sql converti en df
+        st.dataframe(result)
+    except :
+        st.write("LA REQUETE SQL N'EST PAS EXECUTABLE ! IL FAUT LA CORRIGER.")
+
 #     # verifie le nb de colonnes de la reponse fournie ainsi que l'ordre soit correct.
 #     try:
 #         result = result[solution_df.columns]
@@ -62,16 +66,17 @@ query = st.text_area(label="votre code SQL ici", key="user_input")  # cree l'enc
 #             f"le resultat a {n_lines_difference} lignes de difference avec la solution"
 #         )
 #
-# tab2, tab3 = st.tabs(["Tables", "Solution"])  # defini les tab avec leur noms
-#
-# with tab2:
-#     st.write("table : beverages")
-#     st.dataframe(beverages)
-#     st.write("table : food_items")
-#     st.dataframe(food_items)
-#     st.write("table attendue")
-#     st.dataframe(solution_df)
-#     sql_query = st.text_area(label="entrez votre requête")
-#
-# with tab3:
-#     st.write(ANSWER_STR)
+tab2, tab3 = st.tabs(["Tables", "Solution"])  # defini les onglets.
+
+with tab2:
+    exercise_tables = ast.literal_eval(exercise.loc[0,"tables"]) #recup les noms des tables à afficher
+    for table in exercise_tables: # creer une boucle pour chaque table
+        st.write(f"table: {table}") # inscrire nom de la table
+        df_table = con.execute(f"SELECT * FROM {table}").df() #recupere la table depuis db et convertit en dataframe
+        st.dataframe(df_table) # apparaitre la table
+
+with tab3:
+    exercise_name = exercise.loc[0,"exercise_name"]
+    with open(f"data/{exercise_name}.sql", "r") as f: #ouvre le fichier sql et l'associe a l'objet f
+        answer = f.read() #lit l'objet f précédement ouvert
+    st.write(answer)
