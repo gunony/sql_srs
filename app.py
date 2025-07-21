@@ -79,4 +79,4 @@ with tab3:
     exercise_name = exercise.loc[0,"exercise_name"]
     with open(f"data/{exercise_name}.sql", "r") as f: #ouvre le fichier sql et l'associe a l'objet f
         answer = f.read() #lit l'objet f précédement ouvert
-    st.write(answer)
+    st.text(answer)
